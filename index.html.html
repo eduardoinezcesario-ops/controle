@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão de Fardamentos - Controle de Produção e Entrega</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .status-em_producao {
+            background-color: #fef3c7;
+            color: #b45309;
+            border-color: #fde68a;
+        }
+        .status-pronto {
+            background-color: #dcfce7;
+            color: #15803d;
+            border-color: #bbf7d0;
+        }
+        .status-entregue {
+            background-color: #e0f2fe;
+            color: #0369a1;
+            border-color: #bae6fd;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col text-slate-800">
+
+    <!-- Header Navigation -->
+    <header class="bg-indigo-700 text-white shadow-lg sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-indigo-600 rounded-lg shadow-sm">
+                    <i class="fa-solid fa-shirt text-2xl text-yellow-300"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight">Fardamento Control</h1>
+                    <p class="text-xs text-indigo-200">Sistema de Produção & Entrega</p>
+                </div>
+            </div>
+            <button onclick="openModal()" class="bg-amber-400 hover:bg-amber-500 text-indigo-950 font-semibold px-4 py-2.5 rounded-xl shadow-md transition-all flex items-center gap-2 active:scale-95 text-sm sm:text-base">
+                <i class="fa-solid fa-plus text-lg"></i>
+                <span class="hidden sm:inline">Novo Pedido</span>
+                <span class="sm:hidden">Novo</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- Status Summary Counters -->
+        <section class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div onclick="setFilter('todos')" class="cursor-pointer bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-slate-500 uppercase tracking-wider">Total de Pedidos</p>
+                    <h2 id="count-todos" class="text-2xl font-bold text-slate-800 mt-1">0</h2>
+                </div>
+                <div class="p-3 bg-slate-100 text-slate-600 rounded-xl">
+                    <i class="fa-solid fa-list-check text-xl"></i>
+                </div>
+            </div>
+
+            <div onclick="setFilter('em_producao')" class="cursor-pointer bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-amber-600 uppercase tracking-wider">Em Produção</p>
+                    <h2 id="count-producao" class="text-2xl font-bold text-amber-600 mt-1">0</h2>
+                </div>
+                <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+                    <i class="fa-solid fa-scissors text-xl"></i>
+                </div>
+            </div>
+
+            <div onclick="setFilter('pronto')" class="cursor-pointer bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-emerald-600 uppercase tracking-wider">Pronto p/ Retirada</p>
+                    <h2 id="count-pronto" class="text-2xl font-bold text-emerald-600 mt-1">0</h2>
+                </div>
+                <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+                    <i class="fa-solid fa-box-archive text-xl"></i>
+                </div>
+            </div>
+
+            <div onclick="setFilter('entregue')" class="cursor-pointer bg-white p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-medium text-sky-600 uppercase tracking-wider">Entregue / Retirado</p>
+                    <h2 id="count-entregue" class="text-2xl font-bold text-sky-600 mt-1">0</h2>
+                </div>
+                <div class="p-3 bg-sky-50 text-sky-600 rounded-xl">
+                    <i class="fa-solid fa-circle-check text-xl"></i>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search and Filter Bar -->
+        <section class="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <!-- Search Box -->
+            <div class="relative w-full md:w-96">
+                <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" id="searchInput" oninput="renderOrders()" placeholder="Pesquisar por nome do cliente..." 
+                    class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+            </div>
+
+            <!-- Filter Tabs -->
+            <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-full md:w-auto overflow-x-auto text-xs sm:text-sm">
+                <button onclick="setFilter('todos')" id="filter-todos" class="filter-btn flex-1 md:flex-none px-3.5 py-1.5 rounded-lg font-medium transition-all bg-white text-indigo-700 shadow-sm">Todos</button>
+                <button onclick="setFilter('em_producao')" id="filter-em_producao" class="filter-btn flex-1 md:flex-none px-3.5 py-1.5 rounded-lg font-medium text-slate-600 hover:text-slate-900 transition-all">Em Produção</button>
+                <button onclick="setFilter('pronto')" id="filter-pronto" class="filter-btn flex-1 md:flex-none px-3.5 py-1.5 rounded-lg font-medium text-slate-600 hover:text-slate-900 transition-all">Pronto</button>
+                <button onclick="setFilter('entregue')" id="filter-entregue" class="filter-btn flex-1 md:flex-none px-3.5 py-1.5 rounded-lg font-medium text-slate-600 hover:text-slate-900 transition-all">Entregue</button>
+            </div>
+        </section>
+
+        <!-- Orders Grid Container -->
+        <section id="ordersContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Order Cards will be injected dynamically via JavaScript -->
+        </section>
+
+        <!-- Empty State (Hidden by default) -->
+        <div id="emptyState" class="hidden text-center py-12 bg-white rounded-2xl border border-dashed border-slate-200">
+            <div class="w-16 h-16 bg-slate-50 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-3">
+                <i class="fa-solid fa-folder-open text-2xl"></i>
+            </div>
+            <h3 class="text-base font-semibold text-slate-700">Nenhum pedido encontrado</h3>
+            <p class="text-sm text-slate-400 max-w-sm mx-auto mt-1">Não há registros correspondentes aos filtros ou à pesquisa digitada.</p>
+        </div>
+    </main>
+
+    <!-- Modal Form (Create / Edit) -->
+    <div id="orderModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden transform transition-all">
+            <!-- Modal Header -->
+            <div class="bg-indigo-700 px-6 py-4 text-white flex justify-between items-center">
+                <h3 id="modalTitle" class="text-lg font-bold">Novo Cadastro de Fardamento</h3>
+                <button onclick="closeModal()" class="text-indigo-200 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+
+            <!-- Duplicate Warning Alert Box -->
+            <div id="duplicateAlert" class="hidden m-4 mb-0 p-3 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-red-500 text-lg mt-0.5"></i>
+                <div>
+                    <h4 class="text-sm font-semibold text-red-800">Cliente já cadastrado!</h4>
+                    <p class="text-xs text-red-600">Já existe um pedido em andamento para este cliente. Por favor, verifique a lista antes de prosseguir.</p>
+                </div>
+            </div>
+
+            <!-- Modal Form -->
+            <form id="orderForm" onsubmit="saveOrder(event)" class="p-6 space-y-4">
+                <input type="hidden" id="orderId">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Nome do Cliente *</label>
+                    <input type="text" id="clientName" required placeholder="Ex: Maria Oliveira ou Empresa X" 
+                        class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Telefone / Contato</label>
+                        <input type="text" id="clientPhone" placeholder="(00) 00000-0000" 
+                            class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Status Atual</label>
+                        <select id="orderStatus" class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm bg-white">
+                            <option value="em_producao">Em Produção</option>
+                            <option value="pronto">Pronto para Retirada</option>
+                            <option value="entregue">Entregue / Retirado</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 uppercase mb-1">Descrição do Fardamento *</label>
+                    <textarea id="orderDescription" required rows="3" placeholder="Ex: 5 Camisas Polo M com bordado da logomarca + 2 Calças brim G" 
+                        class="w-full px-3.5 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-sm"></textarea>
+                </div>
+
+                <!-- Modal Actions -->
+                <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
+                    <button type="button" onclick="closeModal()" class="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 text-sm font-medium transition-all">Cancelar</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-semibold shadow-md transition-all">Salvar Pedido</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 transition-all transform translate-y-20 opacity-0 z-50">
+        <i id="toastIcon" class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage" class="text-sm font-medium">Ação realizada com sucesso!</span>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // Storage Keys & Main State
+        const STORAGE_KEY = 'fardamento_orders_db';
+        let orders = [];
+        let currentFilter = 'todos';
+
+        // Load data on window startup
+        window.onload = function() {
+            loadOrders();
+            renderOrders();
+        };
+
+        // Load orders from LocalStorage
+        function loadOrders() {
+            const saved = localStorage.getItem(STORAGE_KEY);
+            if (saved) {
+                try {
+                    orders = JSON.parse(saved);
+                } catch (e) {
+                    orders = [];
+                }
+            } else {
+                // Initial demo data if empty
+                orders = [
+                    {
+                        id: '1',
+                        clientName: 'João Silva',
+                        clientPhone: '(81) 98888-1111',
+                        description: '3 Camisas Polo Verde (M), 2 Calças Brim (G) com bordado frontal',
+                        status: 'em_producao',
+                        createdAt: new Date().toLocaleDateString('pt-BR')
+                    },
+                    {
+                        id: '2',
+                        clientName: 'Oficina Mecânica Express',
+                        clientPhone: '(81) 99999-2222',
+                        description: '10 Macacões de Proteção Azuis com estampa nas costas',
+                        status: 'pronto',
+                        createdAt: new Date().toLocaleDateString('pt-BR')
+                    }
+                ];
+                saveOrdersToStorage();
+            }
+        }
+
+        // Save state to LocalStorage
+        function saveOrdersToStorage() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
+        }
+
+        // Render Cards List
+        function renderOrders() {
+            const container = document.getElementById('ordersContainer');
+            const emptyState = document.getElementById('emptyState');
+            const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
+
+            container.innerHTML = '';
+            updateCounters();
+
+            // Filter logic
+            const filtered = orders.filter(order => {
+                const matchesFilter = currentFilter === 'todos' || order.status === currentFilter;
+                const matchesSearch = order.clientName.toLowerCase().includes(searchInput) || 
+                                     order.description.toLowerCase().includes(searchInput);
+                return matchesFilter && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            // Render each card
+            filtered.forEach(order => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-2xl p-5 border border-slate-100 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative';
+
+                let statusBadge = '';
+                let statusText = '';
+                
+                if (order.status === 'em_producao') {
+                    statusBadge = 'status-em_producao';
+                    statusText = '<i class="fa-solid fa-scissors mr-1.5"></i> Em Produção';
+                } else if (order.status === 'pronto') {
+                    statusBadge = 'status-pronto';
+                    statusText = '<i class="fa-solid fa-box-archive mr-1.5"></i> Pronto p/ Retirada';
+                } else {
+                    statusBadge = 'status-entregue';
+                    statusText = '<i class="fa-solid fa-circle-check mr-1.5"></i> Entregue / Retirado';
+                }
+
+                card.innerHTML = `
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-3">
+                            <span class="px-3 py-1 rounded-full text-xs font-semibold border ${statusBadge}">
+                                ${statusText}
+                            </span>
+                            <div class="flex items-center gap-1">
+                                <button onclick="editOrder('${order.id}')" title="Editar" class="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-50 transition-colors">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </button>
+                                <button onclick="deleteOrder('${order.id}')" title="Excluir" class="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-slate-50 transition-colors">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <h3 class="text-base font-bold text-slate-900 mb-1">${escapeHtml(order.clientName)}</h3>
+                        
+                        ${order.clientPhone ? `
+                            <p class="text-xs text-slate-500 mb-3 flex items-center gap-1.5">
+                                <i class="fa-solid fa-phone text-slate-400"></i> ${escapeHtml(order.clientPhone)}
+                            </p>
+                        ` : ''}
+
+                        <div class="bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
+                            <p class="text-xs font-medium text-slate-500 uppercase tracking-wider mb-1">Descrição / Peças:</p>
+                            <p class="text-sm text-slate-700 whitespace-pre-line">${escapeHtml(order.description)}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="text-xs text-slate-400 mb-3 flex justify-between items-center border-t border-slate-100 pt-3">
+                            <span>Cadastrado em: ${order.createdAt}</span>
+                        </div>
+
+                        <!-- Action Buttons based on status -->
+                        <div class="grid grid-cols-2 gap-2">
+                            ${order.status === 'em_producao' ? `
+                                <button onclick="updateStatus('${order.id}', 'pronto')" class="col-span-2 py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-check"></i> Marcar como PRONTO
+                                </button>
+                            ` : ''}
+
+                            ${order.status === 'pronto' ? `
+                                <button onclick="updateStatus('${order.id}', 'em_producao')" class="py-2 px-3 bg-amber-100 text-amber-800 hover:bg-amber-200 rounded-xl text-xs font-semibold transition-all">
+                                    Voltar Produção
+                                </button>
+                                <button onclick="updateStatus('${order.id}', 'entregue')" class="py-2 px-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center justify-center gap-1.5">
+                                    <i class="fa-solid fa-hand-holding-hand"></i> Dar Baixa / Entregue
+                                </button>
+                            ` : ''}
+
+                            ${order.status === 'entregue' ? `
+                                <button onclick="updateStatus('${order.id}', 'pronto')" class="col-span-2 py-2 px-3 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-xl text-xs font-semibold transition-all">
+                                    Reverter para Pronto
+                                </button>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+        }
+
+        // Counters update
+        function updateCounters() {
+            document.getElementById('count-todos').innerText = orders.length;
+            document.getElementById('count-producao').innerText = orders.filter(o => o.status === 'em_producao').length;
+            document.getElementById('count-pronto').innerText = orders.filter(o => o.status === 'pronto').length;
+            document.getElementById('count-entregue').innerText = orders.filter(o => o.status === 'entregue').length;
+        }
+
+        // Set Filter Tab
+        function setFilter(filter) {
+            currentFilter = filter;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.className = 'filter-btn flex-1 md:flex-none px-3.5 py-1.5 rounded-lg font-medium text-slate-600 hover:text-slate-900 transition-all';
+            });
+            
+            const activeBtn = document.getElementById(`filter-${filter}`);
+            if (activeBtn) {
+                activeBtn.className = 'filter-btn flex-1 md:flex-none px-3.5 py-1.5 rounded-lg font-medium transition-all bg-white text-indigo-700 shadow-sm';
+            }
+
+            renderOrders();
+        }
+
+        // Save / Create Order
+        function saveOrder(e) {
+            e.preventDefault();
+
+            const id = document.getElementById('orderId').value;
+            const clientName = document.getElementById('clientName').value.trim();
+            const clientPhone = document.getElementById('clientPhone').value.trim();
+            const description = document.getElementById('orderDescription').value.trim();
+            const status = document.getElementById('orderStatus').value;
+
+            // Check Duplicate Name (case insensitive)
+            const isDuplicate = orders.some(o => 
+                o.id !== id && o.clientName.toLowerCase() === clientName.toLowerCase()
+            );
+
+            if (isDuplicate) {
+                document.getElementById('duplicateAlert').classList.remove('hidden');
+                return;
+            } else {
+                document.getElementById('duplicateAlert').classList.add('hidden');
+            }
+
+            if (id) {
+                // Update Existing
+                const index = orders.findIndex(o => o.id === id);
+                if (index !== -1) {
+                    orders[index] = { ...orders[index], clientName, clientPhone, description, status };
+                    showToast('Pedido atualizado com sucesso!');
+                }
+            } else {
+                // Create New
+                const newOrder = {
+                    id: Date.now().toString(),
+                    clientName,
+                    clientPhone,
+                    description,
+                    status,
+                    createdAt: new Date().toLocaleDateString('pt-BR')
+                };
+                orders.unshift(newOrder);
+                showToast('Novo fardamento cadastrado!');
+            }
+
+            saveOrdersToStorage();
+            closeModal();
+            renderOrders();
+        }
+
+        // Quick status transition
+        function updateStatus(id, newStatus) {
+            const index = orders.findIndex(o => o.id === id);
+            if (index !== -1) {
+                orders[index].status = newStatus;
+                saveOrdersToStorage();
+                renderOrders();
+                showToast('Status alterado!');
+            }
+        }
+
+        // Edit Order
+        function editOrder(id) {
+            const order = orders.find(o => o.id === id);
+            if (!order) return;
+
+            document.getElementById('orderId').value = order.id;
+            document.getElementById('clientName').value = order.clientName;
+            document.getElementById('clientPhone').value = order.clientPhone || '';
+            document.getElementById('orderDescription').value = order.description;
+            document.getElementById('orderStatus').value = order.status;
+            
+            document.getElementById('modalTitle').innerText = 'Editar Pedido de Fardamento';
+            document.getElementById('duplicateAlert').classList.add('hidden');
+            document.getElementById('orderModal').classList.remove('hidden');
+        }
+
+        // Delete Order
+        function deleteOrder(id) {
+            if (confirm('Tem certeza que deseja excluir este registro de fardamento?')) {
+                orders = orders.filter(o => o.id !== id);
+                saveOrdersToStorage();
+                renderOrders();
+                showToast('Pedido removido.');
+            }
+        }
+
+        // Modal Controls
+        function openModal() {
+            document.getElementById('orderForm').reset();
+            document.getElementById('orderId').value = '';
+            document.getElementById('modalTitle').innerText = 'Novo Cadastro de Fardamento';
+            document.getElementById('duplicateAlert').classList.add('hidden');
+            document.getElementById('orderModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('orderModal').classList.add('hidden');
+        }
+
+        // Toast Feedback
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        // Utility: Escape HTML String
+        function escapeHtml(str) {
+            return str ? str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;") : '';
+        }
+    </script>
+</body>
+</html>
